@@ -50,9 +50,9 @@ st.markdown("🔍 **Pågående oppgaver**")
 
 # Display tasks
 for idx, task in enumerate(st.session_state.tasks):
-    # Add egg emoji if waiting comment exists
-    title_prefix = "🥚 " if task.get("wait_for") else ""
-    with st.expander(f"{title_prefix}{task['title']}"):
+    # prepend egg emoji if there's a wait_for comment
+    header = f"{'🥚 ' if task['wait_for'] else ''}{task['title']}"
+    with st.expander(header):
         st.write(task["desc"])
         if task["wait"]:
             st.warning(f"Venter på: {task['wait_for']}")
@@ -62,12 +62,23 @@ for idx, task in enumerate(st.session_state.tasks):
             value=task["progress"], key=f"progress_{idx}"
         )
         task["progress"] = progress
-        # Custom progress bar with 90s arcade style in green (#5FAA58)
+        # Custom arcade‐inspirert progress bar i grønn #5FAA58
         percent = progress
         st.markdown(f"""
-            <div style="background-color:#222; border:2px solid #5FAA58; border-radius:4px; height:24px; width:100%; position: relative;">
-                <div style="background-color:#5FAA58; width:{percent}%; height:100%; transform: skew(-10deg); box-shadow: 0 0 8px #5FAA58, inset 0 0 4px #80c372;"></div>
-                <div style="position:absolute; top:0; left:0; width:100%; text-align:center; line-height:24px; font-family:'Press Start 2P', monospace; color:#FFF; font-size:12px;">{percent}%</div>
+            <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
+              <div style="
+                background:#5FAA58;
+                width:{percent}%;
+                height:100%;
+                transform:skew(-10deg);
+                box-shadow:0 0 8px #5FAA58,inset 0 0 4px #80c372;
+              "></div>
+              <div style="
+                position:absolute;top:0;left:0;width:100%;
+                text-align:center;line-height:24px;
+                font-family:'Press Start 2P',monospace;
+                color:#FFF;font-size:12px;
+              ">{percent}%</div>
             </div>
         """, unsafe_allow_html=True)
         if progress == 100:
