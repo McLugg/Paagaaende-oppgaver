@@ -19,10 +19,9 @@ col2.metric("Ferdig", done)
 col3.metric("Snitt tid", f"{avg_time} min")
 st.markdown("---")
 
-# Pågående oppgaver
+# Pågående oppgaver (før Legg til ny oppgave)
 st.markdown("🔍 **Pågående oppgaver**")
 for idx, task in enumerate(st.session_state.tasks):
-    # Header: title + prosent + emoji hvis det venter
     percent = task["progress"]
     emoji = " 🙉" if task["wait_for"] else ""
     header = f"{task['title']} — {percent}%{emoji}"
@@ -30,10 +29,14 @@ for idx, task in enumerate(st.session_state.tasks):
         st.write(task["desc"])
         if task["wait_for"]:
             st.warning(f"Venter på: {task['wait_for']}")
+
         # Slider for progress
         progress = st.slider(
-            "Fremdrift (%)", min_value=0, max_value=100,
-            value=task["progress"], key=f"progress_{idx}"
+            "Fremdrift (%)",
+            min_value=0,
+            max_value=100,
+            value=task["progress"],
+            key=f"progress_{idx}"
         )
         task["progress"] = progress
 
@@ -60,7 +63,8 @@ for idx, task in enumerate(st.session_state.tasks):
             st.success("🎉 Fantastisk! Oppgaven er fullført!")
 
 st.markdown("---")
-# Add new task form (kommentarfelt alltid synlig)
+
+# Legg til ny oppgave (kommentarfelt alltid synlig)
 with st.expander("➕ Legg til ny oppgave", expanded=True):
     with st.form("new_task_form", clear_on_submit=True):
         title = st.text_input("Tittel")
