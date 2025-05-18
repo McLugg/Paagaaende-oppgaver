@@ -19,6 +19,47 @@ col2.metric("Ferdig", done)
 col3.metric("Snitt tid", f"{avg_time} min")
 st.markdown("---")
 
+# Pågående oppgaver
+st.markdown("🔍 **Pågående oppgaver**")
+for idx, task in enumerate(st.session_state.tasks):
+    # Header: title + prosent + emoji hvis det venter
+    percent = task["progress"]
+    emoji = " 🙉" if task["wait_for"] else ""
+    header = f"{task['title']} — {percent}%{emoji}"
+    with st.expander(header):
+        st.write(task["desc"])
+        if task["wait_for"]:
+            st.warning(f"Venter på: {task['wait_for']}")
+        # Slider for progress
+        progress = st.slider(
+            "Fremdrift (%)", min_value=0, max_value=100,
+            value=task["progress"], key=f"progress_{idx}"
+        )
+        task["progress"] = progress
+
+        # Arcade-inspirert progress bar i grønn #5FAA58
+        st.markdown(f"""
+            <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
+              <div style="
+                background:#5FAA58;
+                width:{progress}%;
+                height:100%;
+                transform:skew(-10deg);
+                box-shadow:0 0 8px #5FAA58,inset 0 0 4px #80c372;
+              "></div>
+              <div style="
+                position:absolute;top:0;left:0;width:100%;
+                text-align:center;line-height:24px;
+                font-family:'Press Start 2P',monospace;
+                color:#FFF;font-size:12px;
+              ">{progress}%</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        if progress == 100:
+            st.success("🎉 Fantastisk! Oppgaven er fullført!")
+
+st.markdown("---")
 # Add new task form (kommentarfelt alltid synlig)
 with st.expander("➕ Legg til ny oppgave", expanded=True):
     with st.form("new_task_form", clear_on_submit=True):
@@ -40,44 +81,3 @@ with st.expander("➕ Legg til ny oppgave", expanded=True):
                     "progress": 0
                 })
                 st.success("🚀 Ny oppgave registrert!")
-
-st.markdown("---")
-st.markdown("🔍 **Pågående oppgaver**")
-
-# Display tasks
-for idx, task in enumerate(st.session_state.tasks):
-    # Hvis det finnes en kommentar, prepend egg-emoji
-    header = f"{'🥚 ' if task['wait_for'] else ''}{task['title']}"
-    with st.expander(header):
-        st.write(task["desc"])
-        if task["wait_for"]:
-            st.warning(f"Venter på: {task['wait_for']}")
-        # Slider for progress
-        progress = st.slider(
-            "Fremdrift (%)", min_value=0, max_value=100,
-            value=task["progress"], key=f"progress_{idx}"
-        )
-        task["progress"] = progress
-
-        # Arcade-inspirert progress bar i grønn #5FAA58
-        percent = progress
-        st.markdown(f"""
-            <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
-              <div style="
-                background:#5FAA58;
-                width:{percent}%;
-                height:100%;
-                transform:skew(-10deg);
-                box-shadow:0 0 8px #5FAA58,inset 0 0 4px #80c372;
-              "></div>
-              <div style="
-                position:absolute;top:0;left:0;width:100%;
-                text-align:center;line-height:24px;
-                font-family:'Press Start 2P',monospace;
-                color:#FFF;font-size:12px;
-              ">{percent}%</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        if progress == 100:
-            st.success("🎉 Fantastisk! Oppgaven er fullført!")
