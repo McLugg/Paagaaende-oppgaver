@@ -22,15 +22,14 @@ st.markdown("---")
 # Add new task form with clear_on_submit to avoid manual session-state resets
 with st.expander("➕ Legg til ny oppgave", expanded=True):
     with st.form("new_task_form", clear_on_submit=True):
-        title = st.text_input("Tittel", key="form_title")
-        desc = st.text_area("Beskrivelse", key="form_desc")
-        wait = st.checkbox("Venter på noen?", key="form_wait")
+        title = st.text_input("Tittel")
+        desc = st.text_area("Beskrivelse")
+        wait = st.checkbox("Venter på noen?")
+        wait_for = ""
         if wait:
-            wait_for = st.text_input("Kommentar: Hva venter du på?", key="form_wait_for")
-        else:
-            wait_for = ""
-
+            wait_for = st.text_input("Kommentar: Hva venter du på?")
         submit = st.form_submit_button("Legg til oppgave")
+
         if submit:
             if not title:
                 st.error("❌ Tittel kan ikke være tom.")
@@ -58,10 +57,16 @@ for idx, task in enumerate(st.session_state.tasks):
         # Slider for progress
         progress = st.slider(
             "Fremdrift (%)", min_value=0, max_value=100,
-            value=task["progress"], key=f"progress_{idx}" 
+            value=task["progress"], key=f"progress_{idx}"
         )
         task["progress"] = progress
-        # Progress bar
-        st.progress(progress / 100.0)
+        # Custom progress bar with 90s arcade style in green (#5FAA58)
+        percent = progress
+        st.markdown(f"""
+            <div style="background-color:#222; border:2px solid #5FAA58; border-radius:4px; height:24px; width:100%; position: relative;">
+                <div style="background-color:#5FAA58; width:{percent}%; height:100%; transform: skew(-10deg); box-shadow: 0 0 8px #5FAA58, inset 0 0 4px #80c372;"></div>
+                <div style="position:absolute; top:0; left:0; width:100%; text-align:center; line-height:24px; font-family:'Press Start 2P', monospace; color:#FFF; font-size:12px;">{percent}%</div>
+            </div>
+        """, unsafe_allow_html=True)
         if progress == 100:
             st.success("🎉 Fantastisk! Oppgaven er fullført!")
