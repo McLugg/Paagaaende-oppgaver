@@ -1,12 +1,21 @@
 import streamlit as st
+import os
+import json
 
 st.set_page_config(page_title="Mine oppgaver", layout="centered")
 
-# Initialize session state
+# Initialiser session state og last inn oppgaver hvis lagret
 if "tasks" not in st.session_state:
-    st.session_state.tasks = []
+    if os.path.exists("tasks.json"):
+        try:
+            with open("tasks.json", "r") as f:
+                st.session_state.tasks = json.load(f)
+        except:
+            st.session_state.tasks = []
+    else:
+        st.session_state.tasks = []
 
-# Callback for å legge til
+# Callback for å legge til ny oppgave
 def add_task():
     if not st.session_state.title:
         st.error("❌ Tittel kan ikke være tom.")
@@ -14,88 +23,73 @@ def add_task():
     if len(st.session_state.tasks) >= 10:
         st.error("❌ Maks 10 oppgaver tillatt, fullfør noen først.")
         return
-    st.session_state.tasks.append({
+    # Opprett nytt oppgave-objekt
+    task = {
         "title": st.session_state.title,
         "desc": st.session_state.desc,
         "wait": st.session_state.wait,
-        "wait_for": st.session_state.wait_for,
         "progress": 0
-    })
+    }
+    # Kun inkluder 'wait_for' hvis brukeren har fylt inn noe
+    if st.session_state.wait and str(st.session_state.wait_for).strip() != "":
+        task["wait_for"] = st.session_state.wait_for
+    st.session_state.tasks.append(task)
     st.success("🚀 Ny oppgave registrert!")
-    # Reset inputs
+    # Resett form-felt
     st.session_state.title = ""
     st.session_state.desc = ""
     st.session_state.wait = False
     st.session_state.wait_for = ""
+    # Lagre oppgaver til JSON-fil
+    with open("tasks.json", "w") as f:
+        json.dump(st.session_state.tasks, f)
 
-def show_insp():
-    # Eksempel på AI-generert inspirerende melding
-    insp_msgs = [
-        "💪 Du er på god vei!",
-        "🚀 Fortsett slik!",
-        "🔥 Keep the fire burning!",
-        "🎮 Du er en boss!"
-    ]
-    st.toast(insp_msgs[st.session_state.tasks[-1]["progress"] // 25 % len(insp_msgs)])
-
-# Title
+# UI
 st.title("✅ Mine oppgaver")
 
-# Status metrics
+# Status
 total = len(st.session_state.tasks)
-done = sum(1 for t in st.session_state.tasks if t["progress"] == 100)
-avg_time = "-"  # Placeholder, tidssporing ikke implementert
-col1, col2, col3 = st.columns(3)
-col1.metric("Oppgaver totalt", total)
-col2.metric("Ferdig", done)
-col3.metric("Snitt tid", f"{avg_time} min")
+done = sum(1 for t in st.session_state.tasks if t.get("progress") == 100)
+avg_time = "-"
+c1, c2, c3 = st.columns(3)
+c1.metric("Oppgaver totalt", total)
+c2.metric("Ferdig", done)
+c3.metric("Snitt tid", f"{avg_time} min")
 st.markdown("---")
 
-# Pågående oppgaver
-st.markdown("🔍 **Pågående oppgaver**")
+# Legg til oppgave
+with st.form(key="task_form"):
+    st.markdown("### ➕ Legg til ny oppgave")
+    st.text_input("Tittel", key="title")
+    st.text_area("Beskrivelse", key="desc")
+    st.checkbox("Venter på noen?", key="wait")
+    if st.session_state.wait:
+        st.text_input("Kommentar: Hva venter du på?", key="wait_for")
+    st.form_submit_button("Legg til oppgave", on_click=add_task)
+
+st.markdown("---")
+st.markdown("## 🔍 Pågående oppgaver")
+
+# Vis oppgaver
+def show_insp():
+    st.balloons()
+
 for i, task in enumerate(st.session_state.tasks):
-    # Header: tittel — % ferdig + emoji om vent
-    pct = task["progress"]
-    emo = " 🙉" if task["wait_for"] else ""
-    header = f"{task['title']} — {pct}%{emo}"
-    with st.expander(header):
+    with st.expander(task["title"]):
         st.write(task["desc"])
-        if task["wait_for"]:
-            st.warning(f"Venter på: {task['wait_for']}")
-        p = st.slider(
-            "Fremdrift (%)", min_value=0, max_value=100,
-            value=task["progress"], key=f"prog_{i}"
-        )
+        if task.get("wait"):
+            if task.get("wait_for"):
+                st.warning(f"Venter på: {task['wait_for']}")
+            else:
+                st.warning("Venter på: (ingen kommentar)")
+        p = st.slider("Fremdrift (%)", min_value=0, max_value=100,
+                      value=task["progress"], key=f"prog_{i}")
         task["progress"] = p
-        # Arcade-inspirert grønn bar
-        st.markdown(f"""
-            <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
-              <div style="
-                background:#5FAA58;
-                width:{p}%;
-                height:100%;
-                transform:skew(-10deg);
-                box-shadow:0 0 8px #5FAA58,inset 0 0 4px #80c372;
-              "></div>
-              <div style="
-                position:absolute;top:0;left:0;width:100%;
-                text-align:center;line-height:24px;
-                font-family:'Press Start 2P',monospace;
-                color:#FFF;font-size:12px;
-              ">{p}%</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.progress(p/100, text=f"{p}%")
         if p == 100:
             st.success("🎉 Fantastisk! Oppgaven er fullført!")
             show_insp()
 
-st.markdown("---")
-# Legg til ny oppgave
-st.text_input("Tittel", key="title")
-st.text_area("Beskrivelse", key="desc")
-st.checkbox("Venter på noen?", key="wait")
-if st.session_state.wait:
-    st.text_input("Kommentar: Hva venter du på?", key="wait_for")
-
-if st.button("Legg til oppgave", on_click=add_task, key="add_btn"):
-    pass
+# Lagre oppgaver til JSON etter endringer (f.eks. fremdrift)
+with open("tasks.json", "w") as f:
+    json.dump(st.session_state.tasks, f)
