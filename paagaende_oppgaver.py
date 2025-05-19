@@ -27,6 +27,15 @@ if "tasks" not in st.session_state:
             st.session_state.tasks = json.load(f)
     else:
         st.session_state.tasks = []
+    # Migrer tasks uten id
+    updated = False
+    for task in st.session_state.tasks:
+        if "id" not in task:
+            task["id"] = str(uuid.uuid4())
+            updated = True
+    if updated:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.tasks, f, ensure_ascii=False, indent=2)
 
 # --- Last inn statistikk ---
 if "completed_count" not in st.session_state:
@@ -48,7 +57,6 @@ def save_stats():
 
 # --- Callback for slider-endring ---
 def on_slider_change(task_id: str):
-    # Finn task med gitt id
     task = next((t for t in st.session_state.tasks if t.get("id") == task_id), None)
     if not task:
         return
@@ -114,7 +122,7 @@ for task in st.session_state.tasks:
     percent = task.get("progress", 0)
     emoji   = " 🙉" if task.get("wait_for") else ""
     header  = f"{task['title']} — {percent}%{emoji}"
-    tid = task['id']
+    tid = task.get("id")
     with st.expander(header, expanded=True):
         st.write(task.get("desc", ""))
         if task.get("wait_for"):
