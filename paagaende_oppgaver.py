@@ -3,7 +3,6 @@ import json
 import os
 
 st.set_page_config(page_title="Mine oppgaver", layout="centered")
-
 DATA_FILE = "tasks.json"
 
 # --- Last inn tasks fra disk ---
@@ -18,7 +17,7 @@ if "tasks" not in st.session_state:
 st.title("✅ Mine oppgaver")
 total = len(st.session_state.tasks)
 done = sum(1 for t in st.session_state.tasks if t["progress"] == 100)
-avg_time = "-"  # Placeholder
+avg_time = "-"
 c1, c2, c3 = st.columns(3)
 c1.metric("Oppgaver totalt", total)
 c2.metric("Ferdig", done)
@@ -38,7 +37,6 @@ with st.expander("➕ Legg til ny oppgave", expanded=True):
             elif len(st.session_state.tasks) >= 10:
                 st.error("❌ Maks 10 oppgaver tillatt, fullfør noen først.")
             else:
-                # Append og persist
                 st.session_state.tasks.append({
                     "title": title,
                     "desc": desc,
@@ -48,8 +46,7 @@ with st.expander("➕ Legg til ny oppgave", expanded=True):
                 with open(DATA_FILE, "w") as f:
                     json.dump(st.session_state.tasks, f)
                 st.success("🚀 Ny oppgave registrert!")
-                # Rerun så oppgaven vises umiddelbart
-                st.experimental_rerun()
+                # Ingen manual rerun – formen sin clear_on_submit trigger run på nytt
 
 st.markdown("---")
 
@@ -72,6 +69,7 @@ for idx, task in enumerate(st.session_state.tasks):
             task["progress"] = new_prog
             with open(DATA_FILE, "w") as f:
                 json.dump(st.session_state.tasks, f)
+
         # Arcade-style bar
         st.markdown(f"""
             <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
@@ -79,6 +77,7 @@ for idx, task in enumerate(st.session_state.tasks):
               <div style="position:absolute;top:0;left:0;width:100%;text-align:center;line-height:24px;font-family:'Press Start 2P',monospace;color:#FFF;font-size:12px;">{task['progress']}%</div>
             </div>
         """, unsafe_allow_html=True)
+
         if task["progress"] == 100:
             st.success("🎉 Fantastisk! Oppgaven er fullført!")
             to_remove.append(task)
@@ -89,4 +88,3 @@ if to_remove:
         st.session_state.tasks.remove(t)
     with open(DATA_FILE, "w") as f:
         json.dump(st.session_state.tasks, f)
-
