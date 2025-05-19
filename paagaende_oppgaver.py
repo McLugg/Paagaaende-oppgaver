@@ -1,6 +1,5 @@
 import streamlit as st
-import json
-import os
+import json, os
 
 DATA_FILE = "tasks.json"
 
@@ -13,6 +12,32 @@ def load_tasks():
 def save_tasks(tasks):
     with open(DATA_FILE, "w") as f:
         json.dump(tasks, f)
+
+def add_task():
+    """Kalles når brukeren klikker knappen."""
+    title    = st.session_state["ti"].strip()
+    desc     = st.session_state["de"].strip()
+    wait_for = st.session_state["wf"].strip()
+    # Validering
+    if not title:
+        st.error("❌ Tittel kan ikke være tom.")
+        return
+    if len(st.session_state.tasks) >= 10:
+        st.error("❌ Maks 10 oppgaver tillatt, fullfør noen først.")
+        return
+    # Legg til
+    st.session_state.tasks.append({
+        "title":    title,
+        "desc":     desc,
+        "wait_for": wait_for,
+        "progress": 0
+    })
+    save_tasks(st.session_state.tasks)
+    # Tøm inputfelt
+    st.session_state["ti"] = ""
+    st.session_state["de"] = ""
+    st.session_state["wf"] = ""
+    st.success("🚀 Ny oppgave registrert!")
 
 # --- INIT ---
 st.set_page_config(page_title="Mine oppgaver", layout="centered")
@@ -34,61 +59,30 @@ st.markdown("---")
 st.markdown("🔍 **Pågående oppgaver**")
 to_remove = []
 for idx, task in enumerate(st.session_state.tasks):
-    percent = task["progress"]
-    emoji   = " 🙉" if task.get("wait_for") else ""
-    header  = f"{task['title']} — {percent}%{emoji}"
-    with st.expander(header):
+    hdr_emoji = " 🙉" if task["wait_for"] else ""
+    hdr = f"{task['title']} — {task['progress']}%{hdr_emoji}"
+    with st.expander(hdr):
         st.write(task["desc"])
-        if task.get("wait_for"):
+        if task["wait_for"]:
             st.warning(f"Venter på: {task['wait_for']}")
-        new_p = st.slider(
-            "Fremdrift (%)", 0, 100,
-            value=percent, key=f"slider_{idx}"
-        )
-        if new_p != percent:
+        new_p = st.slider("Fremdrift (%)", 0, 100, value=task["progress"], key=f"slider_{idx}")
+        if new_p != task["progress"]:
             task["progress"] = new_p
             save_tasks(st.session_state.tasks)
-        # Arcade-bar
-        st.markdown(f"""
-            <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
-              <div style="background:#5FAA58;width:{task['progress']}%;height:100%;transform:skew(-10deg);
-                          box-shadow:0 0 8px #5FAA58,inset 0 0 4px #80c372;"></div>
-              <div style="position:absolute;top:0;left:0;width:100%;text-align:center;
-                          line-height:24px;font-family:'Press Start 2P',monospace;color:#FFF;
-                          font-size:12px;">{task['progress']}%</div>
-            </div>
-        """, unsafe_allow_html=True)
+        # Slett fullført
         if task["progress"] == 100:
             st.success("🎉 Fantastisk! Oppgaven er fullført!")
             to_remove.append(idx)
-
-# Fjern fullførte oppgaver (fra høyeste indeks først)
+# Fjern fullførte bakerst først
 for i in sorted(to_remove, reverse=True):
     st.session_state.tasks.pop(i)
     save_tasks(st.session_state.tasks)
 
 st.markdown("---")
 
-# --- LEGG TIL OPPGAVE ---
+# --- LEGG TIL OPPGAVE (med on_click!) ---
 with st.expander("➕ Legg til ny oppgave", expanded=True):
-    new_title    = st.text_input("Tittel", key="ti")
-    new_desc     = st.text_area("Beskrivelse", key="de")
-    new_wait_for = st.text_input("Kommentar: Hva venter du på?", key="wf")
-    if st.button("Legg til oppgave", key="add"):
-        if not new_title.strip():
-            st.error("❌ Tittel kan ikke være tom.")
-        elif len(st.session_state.tasks) >= 10:
-            st.error("❌ Maks 10 oppgaver tillatt, fullfør noen først.")
-        else:
-            st.session_state.tasks.append({
-                "title":    new_title.strip(),
-                "desc":     new_desc.strip(),
-                "wait_for": new_wait_for.strip(),
-                "progress": 0
-            })
-            save_tasks(st.session_state.tasks)
-            st.success("🚀 Ny oppgave registrert!")
-            # Clear inputs
-            st.session_state["ti"] = ""
-            st.session_state["de"] = ""
-            st.session_state["wf"] = ""
+    st.text_input("Tittel", key="ti")
+    st.text_area("Beskrivelse", key="de")
+    st.text_input("Kommentar: Hva venter du på?", key="wf")
+    st.button("Legg til oppgave", on_click=add_task, key="add_btn")
