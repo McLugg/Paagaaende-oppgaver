@@ -9,8 +9,8 @@ DATA_FILE = "tasks.json"
 STATS_FILE = "stats.json"
 
 # Surprise-eksempler: bytt enkelt her
-SURPRISE_GIF = "https://media.giphy.com/media/xUPGcyi8ZV4YvQpNLK/giphy.gif"
-SURPRISE_IMAGE = "https://example.com/your-meme.png"
+SURPRISE_GIF = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmRuMWJxdmhzaHU4Z2Myd3g5bXZsaWRnMDJ6eHNjZnZyNmt3d3NhdiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26tPplGWjN0xLybiU/giphy.gif"
+SURPRISE_IMAGE = "https://imgflip.com/i/9uj9l8"
 SURPRISE_CSS_BANNER = """
 <style>
 @keyframes glow {
