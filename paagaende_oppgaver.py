@@ -33,11 +33,11 @@ for idx, task in enumerate(st.session_state.tasks):
     emoji = " 🙉" if task.get("wait_for") else ""
     header = f"{task['title']} — {percent}%{emoji}"
     with st.expander(header):
-        st.write(task["desc"])
+        st.write(task.get("desc", ""))
         if task.get("wait_for"):
             st.warning(f"Venter på: {task['wait_for']}")
         new_progress = st.slider(
-            "Fremdrift (%)", min_value=0, max_value=100,
+            "Fremdrift (%)", 0, 100,
             value=percent, key=f"progress_{idx}"
         )
         if new_progress != percent:
@@ -45,7 +45,7 @@ for idx, task in enumerate(st.session_state.tasks):
             # Save update
             with open(DATA_FILE, "w") as f:
                 json.dump(st.session_state.tasks, f)
-        # Custom arcade-style progress bar
+        # Arcade-style progress bar
         st.markdown(f"""
             <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
               <div style="background:#5FAA58;width:{task['progress']}%;height:100%;transform:skew(-10deg);box-shadow:0 0 8px #5FAA58,inset 0 0 4px #80c372;"></div>
@@ -57,8 +57,9 @@ for idx, task in enumerate(st.session_state.tasks):
             to_remove.append(task)
 
 # Remove completed tasks
-for task in to_remove:
-    st.session_state.tasks.remove(task)
+if to_remove:
+    for t in to_remove:
+        st.session_state.tasks.remove(t)
     with open(DATA_FILE, "w") as f:
         json.dump(st.session_state.tasks, f)
 
