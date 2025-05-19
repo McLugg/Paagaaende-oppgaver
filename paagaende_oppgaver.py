@@ -42,10 +42,8 @@ for idx, task in enumerate(st.session_state.tasks):
         )
         if new_progress != percent:
             task["progress"] = new_progress
-            # Save update
             with open(DATA_FILE, "w") as f:
                 json.dump(st.session_state.tasks, f)
-        # Arcade-style progress bar
         st.markdown(f"""
             <div style="background:#222;border:2px solid #5FAA58;border-radius:4px;height:24px;position:relative;">
               <div style="background:#5FAA58;width:{task['progress']}%;height:100%;transform:skew(-10deg);box-shadow:0 0 8px #5FAA58,inset 0 0 4px #80c372;"></div>
@@ -86,7 +84,6 @@ with st.expander("➕ Legg til ny oppgave", expanded=True):
                     "progress": 0
                 }
                 st.session_state.tasks.append(new_task)
-                # Save immediately
                 with open(DATA_FILE, "w") as f:
                     json.dump(st.session_state.tasks, f)
                 st.success("🚀 Ny oppgave registrert!")
