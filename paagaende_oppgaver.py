@@ -19,6 +19,7 @@ if "tasks" not in st.session_state:
             st.session_state.tasks = json.load(f)
     else:
         st.session_state.tasks = []
+    # Gi ID til gamle tasks
     updated = False
     for t in st.session_state.tasks:
         if "id" not in t:
@@ -36,13 +37,13 @@ if "completed_count" not in st.session_state:
     else:
         st.session_state.completed_count = 0
 
-# --- Default innstillinger (utvidet med marquee-emoji) ---
+# --- Default innstillinger (inkl. marquee-emoji) ---
 default_settings = {
-    "mode":       "GIF",
-    "gif":        "https://media1.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif",
-    "img":        "https://imgflip.com/i/9uj9l8",
-    "banner":     "🕹 LEVEL UP! YOU DID IT! 🕹",
-    "marquee":    "🚀"
+    "mode":    "GIF",
+    "gif":     "https://media1.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif",
+    "img":     "https://imgflip.com/i/9uj9l8",
+    "banner":  "🕹 LEVEL UP! YOU DID IT! 🕹",
+    "marquee": "🚀"
 }
 if not os.path.exists(SETTINGS_FILE):
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
@@ -73,6 +74,7 @@ def save_settings():
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(s, f, ensure_ascii=False, indent=2)
 
+# --- Bygg SURPRISE_HTML ut fra valgene ---
 def get_surprise_html():
     m = st.session_state.mode
     if m == "GIF":
@@ -106,23 +108,15 @@ def on_slider_change(task_id):
             save_stats()
             st.balloons()
             st.markdown(get_surprise_html(), unsafe_allow_html=True)
+            # samle marquee-emoji hvis hver femte
             if st.session_state.completed_count % 5 == 0:
-                # Bruk bruker-valgt marquee-emoji
-                em = st.session_state.marquee
-                st.success(f"✨ Du har fullført {st.session_state.completed_count} oppgaver! ✨")
-                st.markdown(
-                    f"""
-                    <marquee behavior="smooth" direction="left" scrollamount="15">
-                      <span style="font-size:48px;">{em}</span>
-                    </marquee>
-                    """, unsafe_allow_html=True
-                )
+                st.session_state._celebrate_marquee = st.session_state.marquee
 
 # --- Header & KPI ---
 st.title("✅ Mine oppgaver")
 c1, c2 = st.columns(2)
-c1.metric("Oppgaver totalt",       len(st.session_state.tasks))
-c2.metric("Oppgaver fullført",     st.session_state.completed_count)
+c1.metric("Oppgaver totalt", len(st.session_state.tasks))
+c2.metric("Oppgaver fullført", st.session_state.completed_count)
 st.markdown("---")
 
 # --- Legg til ny oppgave (øverst!) ---
@@ -148,12 +142,12 @@ with st.expander("➕ Legg til ny oppgave", expanded=True):
                 st.session_state.tasks.append(nt)
                 save_tasks()
                 st.success("🚀 Ny oppgave registrert!")
-
 st.markdown("---")
 
 # --- Pågående oppgaver ---
 st.markdown("🔍 **Pågående oppgaver**")
-to_remove = []
+celebrations = []
+to_remove    = []
 for t in st.session_state.tasks:
     pct = t.get("progress", 0)
     emo = " 🙉" if t.get("wait_for") else ""
@@ -163,9 +157,11 @@ for t in st.session_state.tasks:
         st.write(t.get("desc",""))
         if t.get("wait_for"):
             st.warning(f"Venter på: {t['wait_for']}")
-        st.slider("Fremdrift (%)", 0,100,
-                  value=pct, key=f"progress_{tid}",
-                  on_change=on_slider_change, args=(tid,))
+        st.slider(
+            "Fremdrift (%)", 0,100,
+            value=pct, key=f"progress_{tid}",
+            on_change=on_slider_change, args=(tid,)
+        )
         # 90’s style bar
         st.markdown(f"""
           <div style="background:#222;border:2px solid #5FAA58;
@@ -181,23 +177,37 @@ for t in st.session_state.tasks:
         """, unsafe_allow_html=True)
         if pct == 100:
             to_remove.append(tid)
+            # hente eventuelt marquee
+            if hasattr(st.session_state, '_celebrate_marquee'):
+                celebrations.append(st.session_state._celebrate_marquee)
+                del st.session_state._celebrate_marquee
 
+# fjern ferdige oppgaver
 for tid in to_remove:
     st.session_state.tasks = [x for x in st.session_state.tasks if x["id"] != tid]
 save_tasks()
 
-st.markdown("---")
+# vis marquee-feiringer etter fjerning
+for em in celebrations:
+    st.success(f"✨ Du har fullført {st.session_state.completed_count} oppgaver! ✨")
+    st.markdown(
+        f"""
+        <marquee behavior="smooth" direction="left" scrollamount="15">
+          <span style="font-size:48px;">{em}</span>
+        </marquee>
+        """, unsafe_allow_html=True
+    )
 
+st.markdown("---")
 # --- Innstillinger (collapsed default) ---
 with st.expander("⚙️ Innstillinger overraskelse", expanded=False):
     mode = st.radio("Vis overraskelse som:", ["GIF","Image","CSS"],
                     index=["GIF","Image","CSS"].index(st.session_state.mode))
     st.session_state.mode = mode
 
-    st.text_input("GIF-URL:",      st.session_state.gif,    key="gif")
-    st.text_input("Image-URL:",    st.session_state.img,    key="img")
-    st.text_area("Banner-tekst:",  st.session_state.banner, key="banner", height=80)
-    st.text_input("Marquee-emoji:", st.session_state.marquee, key="marquee")
+    st.text_input("GIF-URL",     st.session_state.gif,    key="gif")
+    st.text_input("Image-URL",   st.session_state.img,    key="img")
+    st.text_area("Banner-tekst", st.session_state.banner,key="banner", height=80)
+    st.text_input("Marquee-emoji", st.session_state.marquee, key="marquee")
 
-    # Lagre umiddelbart når man endrer noe
     save_settings()
