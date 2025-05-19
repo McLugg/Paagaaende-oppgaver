@@ -7,9 +7,39 @@ import uuid
 # --- Konstanter og filstier ---
 DATA_FILE = "tasks.json"
 STATS_FILE = "stats.json"
-FLY_SYMBOL = "₿"
 
-# Motivasjonsmeldinger ved 25%, 50%, 75% og 100%
+# Surprise-eksempler: bytt enkelt her
+SURPRISE_GIF = "https://media.giphy.com/media/xUPGcyi8ZV4YvQpNLK/giphy.gif"
+SURPRISE_IMAGE = "https://example.com/your-meme.png"
+SURPRISE_CSS_BANNER = """
+<style>
+@keyframes glow {
+  0% { text-shadow: 0 0 5px #5FAA58; }
+  50% { text-shadow: 0 0 20px #80c372; }
+  100% { text-shadow: 0 0 5px #5FAA58; }
+}
+.glow-banner {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 24px; color: #5FAA58;
+  animation: glow 1.5s infinite;
+  text-align: center;
+  margin: 16px 0;
+}
+</style>
+<div class="glow-banner">
+  🕹 LEVEL UP! YOU DID IT! 🕹
+</div>
+"""
+
+# Velg hvilken overraskelse som vises ved fullføring
+SURPRISE_HTML = f"""
+<div style="text-align:center; margin:16px 0;">
+  <img src="{SURPRISE_GIF}" alt="Surprise GIF" width="200" />
+</div>
+"""
+# Du kan også bytte til SURPRISE_IMAGE eller SURPRISE_CSS_BANNER
+
+# --- Motivasjonsmeldinger ved 25%, 50%, 75% og 100% ---
 MOTIVATION = {
     25: ["💥 God start! Du er ¼ på vei!", "🚀 25% allerede – imponert!"],
     50: ["🏆 Halveis! Stå på videre!", "⭐ 50% – du ruller det inn!"],
@@ -70,6 +100,9 @@ def on_slider_change(task_id: str):
             st.session_state.completed_count += 1
             save_stats()
             st.balloons()
+            # Vis overraskelse ved fullføring
+            st.markdown(SURPRISE_HTML, unsafe_allow_html=True)
+            # Ekstra feiring hver 5. fullførte oppgave
             if st.session_state.completed_count % 5 == 0:
                 st.success(f"✨ Du har fullført {st.session_state.completed_count} oppgaver! ✨")
                 st.markdown(
@@ -122,7 +155,7 @@ for task in st.session_state.tasks:
     percent = task.get("progress", 0)
     emoji   = " 🙉" if task.get("wait_for") else ""
     header  = f"{task['title']} — {percent}%{emoji}"
-    tid = task.get("id")
+    tid = task["id"]
     with st.expander(header, expanded=True):
         st.write(task.get("desc", ""))
         if task.get("wait_for"):
