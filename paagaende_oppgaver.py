@@ -19,7 +19,6 @@ if "tasks" not in st.session_state:
             st.session_state.tasks = json.load(f)
     else:
         st.session_state.tasks = []
-    # Gi ID til gamle tasks
     updated = False
     for t in st.session_state.tasks:
         if "id" not in t:
@@ -37,12 +36,13 @@ if "completed_count" not in st.session_state:
     else:
         st.session_state.completed_count = 0
 
-# --- Default innstillinger ---
+# --- Default innstillinger (utvidet med marquee-emoji) ---
 default_settings = {
     "mode":       "GIF",
     "gif":        "https://media1.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif",
     "img":        "https://imgflip.com/i/9uj9l8",
-    "banner":     "🕹 LEVEL UP! YOU DID IT! 🕹"
+    "banner":     "🕹 LEVEL UP! YOU DID IT! 🕹",
+    "marquee":    "🚀"
 }
 if not os.path.exists(SETTINGS_FILE):
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
@@ -64,10 +64,11 @@ def save_stats():
 
 def save_settings():
     s = {
-        "mode":   st.session_state.mode,
-        "gif":    st.session_state.gif,
-        "img":    st.session_state.img,
-        "banner": st.session_state.banner
+        "mode":    st.session_state.mode,
+        "gif":     st.session_state.gif,
+        "img":     st.session_state.img,
+        "banner":  st.session_state.banner,
+        "marquee": st.session_state.marquee
     }
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(s, f, ensure_ascii=False, indent=2)
@@ -106,7 +107,16 @@ def on_slider_change(task_id):
             st.balloons()
             st.markdown(get_surprise_html(), unsafe_allow_html=True)
             if st.session_state.completed_count % 5 == 0:
+                # Bruk bruker-valgt marquee-emoji
+                em = st.session_state.marquee
                 st.success(f"✨ Du har fullført {st.session_state.completed_count} oppgaver! ✨")
+                st.markdown(
+                    f"""
+                    <marquee behavior="smooth" direction="left" scrollamount="15">
+                      <span style="font-size:48px;">{em}</span>
+                    </marquee>
+                    """, unsafe_allow_html=True
+                )
 
 # --- Header & KPI ---
 st.title("✅ Mine oppgaver")
@@ -184,13 +194,10 @@ with st.expander("⚙️ Innstillinger overraskelse", expanded=False):
                     index=["GIF","Image","CSS"].index(st.session_state.mode))
     st.session_state.mode = mode
 
-    gif_url = st.text_input("GIF-URL:",    st.session_state.gif)
-    img_url = st.text_input("Image-URL:",  st.session_state.img)
-    ban_txt = st.text_area("Banner-tekst:", st.session_state.banner, height=80)
-
-    st.session_state.gif    = gif_url
-    st.session_state.img    = img_url
-    st.session_state.banner = ban_txt
+    st.text_input("GIF-URL:",      st.session_state.gif,    key="gif")
+    st.text_input("Image-URL:",    st.session_state.img,    key="img")
+    st.text_area("Banner-tekst:",  st.session_state.banner, key="banner", height=80)
+    st.text_input("Marquee-emoji:", st.session_state.marquee, key="marquee")
 
     # Lagre umiddelbart når man endrer noe
     save_settings()
